@@ -1,26 +1,154 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #07090E;
+  --foreground: #f4f4f6;
+  --card: #0F131D;
+  --card-foreground: #f4f4f6;
+  --border: rgba(255, 255, 255, 0.08);
+  --accent-cyan: #00F2FE;
+  --accent-crimson: #FF1E56;
+  --accent-topaz: #F7971E;
+  --accent-amethyst: #9D4EDD;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background-color: #07090E;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: radial-gradient(circle at 15% 20%, rgba(31, 38, 74, 0.4) 0%, transparent 40%),
+              radial-gradient(circle at 85% 15%, rgba(138, 28, 56, 0.25) 0%, transparent 45%),
+              radial-gradient(circle at 50% 80%, rgba(20, 45, 60, 0.3) 0%, transparent 50%),
+              #07090E;
+  background-attachment: fixed;
+  color: #f4f4f6;
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
+  min-height: 100vh;
+}
+
+/* Atmospheric Noise Layer overlay helper */
+.ambient-canvas {
+  background: radial-gradient(circle at 15% 20%, rgba(31, 38, 74, 0.4) 0%, transparent 40%),
+              radial-gradient(circle at 85% 15%, rgba(138, 28, 56, 0.25) 0%, transparent 45%),
+              radial-gradient(circle at 50% 80%, rgba(20, 45, 60, 0.3) 0%, transparent 50%),
+              #07090E;
+}
+
+/* Minimal Subtle Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Ethereal Obsidian Glass Surfaces */
+.ethereal-glass {
+  background: rgba(15, 19, 29, 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ethereal-glass:hover {
+  background: rgba(20, 25, 38, 0.85);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.ethereal-glass-card {
+  background: rgba(15, 19, 29, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Backward compatibility for apple-card using ethereal obsidian specs */
+.apple-card {
+  background: rgba(15, 19, 29, 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-card-subtle {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  transition: all 0.25s ease;
+}
+
+.apple-card-subtle:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Luxury Iridescent Import Button */
+.iridescent-pill {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(79, 172, 254, 0.2) 50%, rgba(106, 17, 203, 0.2) 100%);
+  border: 1px solid rgba(0, 242, 254, 0.5);
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
+  transition: all 0.3s ease;
+}
+
+.iridescent-pill:hover {
+  box-shadow: 0 0 30px rgba(0, 242, 254, 0.4);
+  border-color: rgba(0, 242, 254, 0.8);
+  transform: translateY(-1px);
+}
+
+/* Node Glows */
+@keyframes crimsonPulseRing {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(255, 30, 86, 0.8), 0 0 0 4px rgba(255, 30, 86, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 30, 86, 1), 0 0 0 8px rgba(255, 30, 86, 0.15);
+  }
+}
+
+.crimson-conflict-node {
+  animation: crimsonPulseRing 2.2s infinite ease-in-out;
+}
+
+@keyframes tealHaloRing {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(45, 212, 191, 0.6), 0 0 0 2px rgba(45, 212, 191, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(45, 212, 191, 0.9), 0 0 0 5px rgba(45, 212, 191, 0.15);
+  }
+}
+
+.teal-halo-node {
+  animation: tealHaloRing 3s infinite ease-in-out;
 }

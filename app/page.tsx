@@ -1,69 +1,68 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState } from 'react';
+import { PatientWorkspace } from '../src/components/workspace/PatientWorkspace';
+import { ScrollCinematic } from '../src/components/cinematic/ScrollCinematic';
 
 export default function Home() {
+  const [showCinematic, setShowCinematic] = useState(true);
+
+  const handleCinematicComplete = () => {
+    setShowCinematic(false);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="min-h-screen bg-[#08090C] text-[#F4F4F6] flex flex-col font-sans selection:bg-white/20 selection:text-white">
+      {/* Global Navigation Header (Minimal, Apple-Caliber Precision) */}
+      <header className="h-10 bg-[#08090C]/90 border-b border-white/[0.07] text-xs px-4 sm:px-6 flex items-center justify-between text-zinc-400 backdrop-blur-xl sticky top-0 z-40 select-none">
+        {/* Left: THRESHOLD / Longitudinal History Reconstruction */}
+        <div className="flex items-center gap-2.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className="font-mono font-medium tracking-[0.08em] text-white uppercase text-[11px]">
+            THRESHOLD
+          </span>
+          <span className="text-zinc-600 font-light">/</span>
+          <span className="text-[11px] text-zinc-400 font-normal tracking-tight hidden sm:inline">
+            Longitudinal Health Synthesis
+          </span>
+        </div>
+
+        {/* Center: Ramaswamy K. (TN-UHID-88412) · 15 Records · 1 Conflict · 1 Gap */}
+        <div className="hidden md:flex items-center gap-2.5 font-mono text-[11px] text-zinc-400">
+          <span className="text-zinc-200 font-medium tracking-tight">Ramaswamy K. (TN-UHID-88412)</span>
+          <span className="text-zinc-600">·</span>
+          <span>15 Records</span>
+          <span className="text-zinc-600">·</span>
+          <span className="text-[#E04838] font-medium">1 Safety Conflict</span>
+          <span className="text-zinc-600">·</span>
+          <span className="text-[#F59E0B] font-medium">10.9-mo Gap</span>
+        </div>
+
+        {/* Right: Telemetry / Engine Status Indicator */}
+        <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80" />
+          <span className="hidden sm:inline text-zinc-400">Cross-Facility EMR Engine</span>
+          <span className="px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-zinc-300 text-[10px]">
+            v2.4
+          </span>
+        </div>
+      </header>
+
+      {/* Scroll-Driven Canvas Cinematic Overlay */}
+      {showCinematic && (
+        <ScrollCinematic
+          onComplete={handleCinematicComplete}
+          onSkip={handleCinematicComplete}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      )}
+
+      {/* Main Patient Workspace - Lands Directly on Dashboard */}
+      <div className={`flex-1 ${showCinematic ? 'hidden' : 'block'}`}>
+        <PatientWorkspace onReplayCinematic={() => setShowCinematic(true)} />
+      </div>
     </div>
   );
 }
