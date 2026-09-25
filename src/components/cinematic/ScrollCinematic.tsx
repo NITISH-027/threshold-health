@@ -89,13 +89,12 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
   const targetProgressRef = useRef<number>(0);
   const currentProgressRef = useRef<number>(0);
   const lastRenderedFrameRef = useRef<number>(-1);
-  const isTransitioningRef = useRef<boolean>(false);
+  const lenisRef = useRef<Lenis | null>(null);
   const naturalDimensionsRef = useRef<{ width: number; height: number }>({ width: 1920, height: 1080 });
 
   // Preloading progress state (only used ONCE during initial asset decode before scroll begins)
   const [loadPercentage, setLoadPercentage] = useState<number>(0);
   const [isReady, setIsReady] = useState<boolean>(false);
-  const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
 
   /**
    * Recalculates canvas sizing and pre-computes aspect-fill / cover layout.
@@ -160,15 +159,29 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
   }, []);
 
   /**
-   * Trigger transition into the workspace with fade-out
+   * Smoothly scroll down to the workspace section
    */
-  const triggerTransition = useCallback((openConflictModal: boolean) => {
-    if (isTransitioningRef.current) return;
-    isTransitioningRef.current = true;
-    setIsFadingOut(true);
-    setTimeout(() => {
+  const handleJumpToWorkspace = useCallback((openConflictModal: boolean = false) => {
+    const target = document.getElementById('workspace-section');
+    if (target) {
+      if (lenisRef.current) {
+        lenisRef.current.scrollTo(target, {
+          duration: 1.2,
+          onComplete: () => {
+            if (openConflictModal && onComplete) {
+              onComplete(true);
+            }
+          },
+        });
+      } else {
+        target.scrollIntoView({ behavior: 'smooth' });
+        if (openConflictModal && onComplete) {
+          onComplete(true);
+        }
+      }
+    } else if (onComplete) {
       onComplete(openConflictModal);
-    }, 700);
+    }
   }, [onComplete]);
 
   /**
@@ -280,12 +293,15 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
       smoothWheel: true,
       syncTouch: true,
     });
+    lenisRef.current = lenis;
 
     const updateScrollTarget = (scrollY: number) => {
       if (!containerRef.current) return;
+      const containerTop = containerRef.current.offsetTop || 0;
       const totalScrollable = containerRef.current.scrollHeight - window.innerHeight;
       if (totalScrollable > 0) {
-        targetProgressRef.current = Math.max(0, Math.min(1, scrollY / totalScrollable));
+        const relativeScroll = scrollY - containerTop;
+        targetProgressRef.current = Math.max(0, Math.min(1, relativeScroll / totalScrollable));
       }
     };
 
@@ -360,9 +376,13 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
       const op4 = calculateSegmentOpacity(progress, 0.82, 1.00, 0.05);
 
       const maxStoryOp = Math.max(op1, op2, op3, op4);
+      const currentScrollY = typeof window !== 'undefined' ? (window.scrollY || window.pageYOffset || 0) : 0;
+      const containerTop = containerRef.current?.offsetTop || 0;
+      const totalScrollable = (containerRef.current?.scrollHeight || 0) - (typeof window !== 'undefined' ? window.innerHeight : 0);
+      const isPastIntro = totalScrollable > 0 && (currentScrollY - containerTop) > totalScrollable + 40;
 
       if (storyContainerRef.current) {
-        storyContainerRef.current.style.opacity = maxStoryOp.toFixed(3);
+        storyContainerRef.current.style.opacity = isPastIntro ? '0' : maxStoryOp.toFixed(3);
         const cardInner = storyContainerRef.current.firstElementChild as HTMLElement | null;
         if (cardInner) {
           if (op4 > 0.15) {
@@ -413,11 +433,6 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
         telemetryFrameRef.current.textContent = `Frame ${targetFrame + 1} / ${TOTAL_FRAMES} · 60 FPS`;
       }
 
-      // Auto-hand-off when reaching the very end of playback (0.995)
-      if (progress >= 0.995 && !isTransitioningRef.current) {
-        triggerTransition(false);
-      }
-
       rafId = requestAnimationFrame(loop);
     };
 
@@ -426,17 +441,16 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
     return () => {
       cancelAnimationFrame(rafId);
       lenis.destroy();
+      lenisRef.current = null;
       window.removeEventListener('resize', updateLayout);
       window.removeEventListener('scroll', onNativeScroll);
     };
-  }, [updateLayout, triggerTransition]);
+  }, [updateLayout]);
 
   return (
     <div
       ref={containerRef}
-      className={`relative h-[450vh] bg-[#090A0D] text-[#E2E4E9] select-none transition-opacity duration-700 ease-out ${
-        isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
-      }`}
+      className="relative h-[450vh] bg-[#090A0D] text-[#E2E4E9] select-none"
     >
       {/* Sticky Fullscreen Canvas Viewport */}
       <div className="sticky top-0 w-full h-screen overflow-hidden flex items-center justify-center">
@@ -479,8 +493,9 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
             <div className="pt-2">
               <button
                 onClick={() => {
+                  setIsReady(true);
                   if (onSkip) onSkip();
-                  else triggerTransition(false);
+                  else handleJumpToWorkspace(false);
                 }}
                 className="group px-4 py-2 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.12] hover:border-white/[0.25] text-xs font-mono text-zinc-300 hover:text-white transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg"
               >
@@ -492,7 +507,7 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
         )}
 
         {/* Top Minimal Telemetry & Skip Button */}
-        <div className="absolute top-6 left-6 right-6 flex items-center justify-between pointer-events-auto z-20">
+        <div className="absolute top-12 sm:top-14 left-6 right-6 flex items-center justify-between pointer-events-auto z-20">
           <div className="flex items-center gap-3">
             <span className="w-2.5 h-2.5 rounded-full bg-[#E04838] animate-pulse" />
             <div className="flex flex-col">
@@ -511,7 +526,7 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
           <button
             onClick={() => {
               if (onSkip) onSkip();
-              else triggerTransition(false);
+              else handleJumpToWorkspace(false);
             }}
             className="px-3.5 py-1.5 rounded-lg bg-[#111318]/80 hover:bg-[#181B22] border border-[#1E222B] hover:border-[#2DD4BF]/50 text-xs font-mono text-[#8B949E] hover:text-[#E2E4E9] backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer shadow-lg"
           >
@@ -524,7 +539,7 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
         <div
           ref={storyContainerRef}
           style={{ opacity: 0 }}
-          className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 max-w-2xl w-[90%] text-center pointer-events-none transition-opacity duration-150 will-change-transform"
+          className="absolute bottom-12 left-1/2 -translate-x-1/2 z-40 max-w-2xl w-[90%] text-center pointer-events-none transition-opacity duration-150 will-change-transform"
         >
           <div className="bg-[#080B11]/75 backdrop-blur-xl border border-white/[0.08] rounded-2xl px-6 py-5 shadow-2xl transition-all duration-300">
             <div className="grid grid-cols-1 items-center justify-center">
@@ -598,7 +613,7 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
                 </p>
                 <div className="mt-3.5 pt-0.5 pointer-events-auto">
                   <button
-                    onClick={() => triggerTransition(false)}
+                    onClick={() => handleJumpToWorkspace(false)}
                     className="group relative px-6 py-2.5 rounded-full bg-[#0A0D14]/90 hover:bg-[#151926] backdrop-blur-md border border-[#FF3366]/70 hover:border-[#FF3366] text-white text-xs font-mono tracking-wider uppercase font-semibold transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,51,102,0.45)] shadow-[0_0_20px_rgba(255,51,102,0.25)] cursor-pointer flex items-center gap-2.5 mx-auto transform hover:scale-[1.02] active:scale-[0.98]"
                   >
                     <span className="w-2 h-2 rounded-full bg-[#FF3366] animate-pulse" />

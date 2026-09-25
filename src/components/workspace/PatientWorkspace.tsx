@@ -18,7 +18,6 @@ import {
   Clock,
   History,
   FileText,
-  Play,
   ArrowRight,
   ShieldAlert,
   ArrowRightLeft,
@@ -53,14 +52,12 @@ import { ImportRecordsModal } from './ImportRecordsModal';
 
 interface PatientWorkspaceProps {
   initialConflictOpen?: boolean;
-  onReplayCinematic?: () => void;
 }
 
 type QuestionKey = 'changed' | 'conflicting' | 'missing' | 'history';
 
 export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
   initialConflictOpen = false,
-  onReplayCinematic,
 }) => {
   // Lifted Patient Profile & Records State (Dynamic Multi-Patient & Ingestion)
   const [activeProfile, setActiveProfile] = useState<PatientProfile>(PATIENT_PT2041_PROFILE);
@@ -350,7 +347,7 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
   return (
     <div className="bg-[#07090E] p-4 sm:p-6 lg:p-8 min-h-screen text-[#E4E6EB] font-sans antialiased flex flex-col items-center relative overflow-hidden">
       {/* Global Atmosphere & Ambient Gradients Canvas */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute -top-[20%] -left-[10%] w-[55vw] h-[55vw] rounded-full bg-[#1F264A]/30 blur-[130px]" />
         <div className="absolute top-[10%] -right-[15%] w-[50vw] h-[50vw] rounded-full bg-[#8A1C38]/20 blur-[140px]" />
         <div className="absolute -bottom-[20%] left-[20%] w-[60vw] h-[60vw] rounded-full bg-[#142D3C]/25 blur-[140px]" />
@@ -392,16 +389,6 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({
               <Upload className="w-3.5 h-3.5 stroke-[1.5] text-[#00F2FE]" />
               <span className="tracking-wide">[+ Import Records]</span>
             </button>
-
-            {onReplayCinematic && activeProfile.id === 'PT-2041' && (
-              <button
-                onClick={onReplayCinematic}
-                className="px-4 py-2 rounded-full bg-[#0F131D]/80 hover:bg-[#141926]/90 border border-white/[0.08] hover:border-white/[0.16] text-xs font-medium text-zinc-300 hover:text-white transition-all duration-300 cursor-pointer flex items-center gap-2 shadow-sm"
-              >
-                <Play className="w-3.5 h-3.5 stroke-[1.5]" />
-                <span>Replay Intro</span>
-              </button>
-            )}
 
             <button
               onClick={() => handleOpenEvidence(activeRecords.map((r) => r.id))}
