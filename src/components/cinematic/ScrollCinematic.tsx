@@ -172,11 +172,14 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
   }, [onComplete]);
 
   /**
-   * Hardware-Accelerated Preloader:
+   * Hardware-Accelerated Progressive Preloader:
    * Uses fetch -> blob -> createImageBitmap to offload image decoding to background threads.
+   * Progressively unlocks the canvas at 10% (12 frames) so users on Vercel never wait for 100%.
    */
   useEffect(() => {
     let isCancelled = false;
+    let isUnlocked = false;
+    const INITIAL_BURST_FRAMES = 12; // 10% gate to unlock canvas immediately
 
     // Concurrency controlled preload queue
     const preloadAllFrames = async () => {
@@ -214,6 +217,13 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
           loaded++;
           const pct = Math.round((loaded / TOTAL_FRAMES) * 100);
           setLoadPercentage(pct);
+
+          // Progressive unlock: unlock interactive canvas as soon as the first 12 frames (10%) are ready
+          if (!isUnlocked && loaded >= INITIAL_BURST_FRAMES) {
+            isUnlocked = true;
+            setIsReady(true);
+            updateLayout();
+          }
         } catch (err) {
           console.error(`Failed to load frame ${i}:`, err);
         }
@@ -224,9 +234,16 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
         if (isCancelled) break;
         const batch = indices.slice(i, i + CONCURRENCY);
         await Promise.all(batch.map((idx) => loadSingleFrame(idx)));
+
+        // Ensure canvas is unlocked after first batch finishes regardless
+        if (!isUnlocked && loaded >= Math.min(INITIAL_BURST_FRAMES, indices.length)) {
+          isUnlocked = true;
+          setIsReady(true);
+          updateLayout();
+        }
       }
 
-      if (!isCancelled) {
+      if (!isCancelled && !isUnlocked) {
         setIsReady(true);
         updateLayout();
       }
@@ -299,7 +316,28 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
 
       // Render only when frame index changes
       if (targetFrame !== lastRenderedFrameRef.current) {
-        const bitmap = bitmapsRef.current[targetFrame];
+        let bitmap = bitmapsRef.current[targetFrame];
+
+        // Graceful Frame Fallback: If target frame is still downloading, render closest loaded frame
+        if (!bitmap) {
+          // Search backwards for the most recent decoded frame
+          for (let f = targetFrame - 1; f >= 0; f--) {
+            if (bitmapsRef.current[f]) {
+              bitmap = bitmapsRef.current[f];
+              break;
+            }
+          }
+          // Secondary fallback: search forwards if user scrolled backwards
+          if (!bitmap) {
+            for (let f = targetFrame + 1; f < TOTAL_FRAMES; f++) {
+              if (bitmapsRef.current[f]) {
+                bitmap = bitmapsRef.current[f];
+                break;
+              }
+            }
+          }
+        }
+
         const activeCtx = ctxRef.current;
         const layout = cachedLayoutRef.current;
 
@@ -423,7 +461,7 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
                 THRESHOLD // DECODING HARDWARE BITMAPS
               </span>
               <p className="text-xs font-mono text-[#8B949E] mt-1">
-                Caching 123 pre-rendered frames for zero-lag 60 FPS playback
+                Streaming pre-rendered frames for zero-lag 60 FPS playback
               </p>
             </div>
             {/* Progress bar */}
@@ -436,6 +474,20 @@ export const ScrollCinematic: React.FC<ScrollCinematicProps> = ({
             <span className="text-[11px] font-mono text-[#2DD4BF] font-semibold">
               {loadPercentage}%
             </span>
+
+            {/* Instant Fail-Safe Bypass Button */}
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  if (onSkip) onSkip();
+                  else triggerTransition(false);
+                }}
+                className="group px-4 py-2 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.12] hover:border-white/[0.25] text-xs font-mono text-zinc-300 hover:text-white transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-lg"
+              >
+                <span>[ Skip to Workspace → ]</span>
+                <FastForward className="w-3.5 h-3.5 text-[#2DD4BF] group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </div>
           </div>
         )}
 
